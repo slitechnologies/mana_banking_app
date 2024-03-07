@@ -7,8 +7,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.MailException;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
+
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
@@ -27,7 +28,7 @@ public class EmailServiceImpl implements EmailService {
             mailMessage.setText(emailDetails.getMessageBody());
             mailMessage.setSubject(emailDetails.getSubject());
             mailSender.send(mailMessage);
-            System.out.println("Message Sent Successfully");
+            Logger.getLogger("Message Sent Successfully");
         }catch (MailException e){
             throw new RuntimeException(e);
         }

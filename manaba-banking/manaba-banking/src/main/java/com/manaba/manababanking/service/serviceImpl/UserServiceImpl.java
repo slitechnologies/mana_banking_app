@@ -1,10 +1,12 @@
 package com.manaba.manababanking.service.serviceImpl;
 
 import com.manaba.manababanking.constants.ObjectStatus;
+import com.manaba.manababanking.constants.TransactionType;
 import com.manaba.manababanking.dto.*;
 import com.manaba.manababanking.entity.User;
 import com.manaba.manababanking.repository.UserRepository;
 import com.manaba.manababanking.service.EmailService;
+import com.manaba.manababanking.service.TransactionService;
 import com.manaba.manababanking.service.UserService;
 import com.manaba.manababanking.utils.AccountUtils;
 import lombok.RequiredArgsConstructor;
@@ -19,6 +21,7 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final EmailService emailService;
+    private final TransactionService transactionService;
 
     @Override
     public BankResponse createAccount(UserRequest userRequest) {
@@ -126,6 +129,14 @@ public class UserServiceImpl implements UserService {
         userToCredit.setAccountBalance(userToCredit.getAccountBalance().add(request.getAmount()));
         userRepository.save(userToCredit);
 
+        //save credit Transaction
+        TransactionRequest transactionRequest = TransactionRequest.builder()
+                .transactionType(TransactionType.CREDIT)
+                .accountNumber(userToCredit.getAccountNumber())
+                .amount(request.getAmount())
+                .build();
+        transactionService.saveTransaction(transactionRequest);
+
         return BankResponse.builder()
                 .responseCode(AccountUtils.ACCOUNT_CREDITED_SUCCESS_CODE)
                 .responseMessage(AccountUtils.ACCOUNT_CREDITED_SUCCESS_MESSAGE)
@@ -160,9 +171,19 @@ public class UserServiceImpl implements UserService {
                     .responseMessage(AccountUtils.INSUFFICIENT_BALANCE_MESSAGE)
                     .accountInfo(null)
                     .build();
-        } else {
+        }
+        else {
             userToDebit.setAccountBalance(userToDebit.getAccountBalance().subtract(request.getAmount()));
             userRepository.save(userToDebit);
+
+            //save  debit Transaction
+            TransactionRequest transactionRequest = TransactionRequest.builder()
+                    .transactionType(TransactionType.DEBIT)
+                    .accountNumber(userToDebit.getAccountNumber())
+                    .amount(request.getAmount())
+                    .build();
+            transactionService.saveTransaction(transactionRequest);
+
             return BankResponse.builder()
                     .responseCode(AccountUtils.ACCOUNT_DEBITED_SUCCESS_CODE)
                     .responseMessage(AccountUtils.ACCOUNT_DEBITED_SUCCESS_MESSAGE)
@@ -204,7 +225,15 @@ public class UserServiceImpl implements UserService {
                 .subject("DEBIT TRANSFER ALERT")
                 .messageBody("Hie "+sourceUsername+" A Sum of "+request.getAmount()+" has been deducted from your account ending 2******"+sourceAccountUser.getAccountNumber().substring(7, 10) +" Your current balance is "+sourceAccountUser.getAccountBalance())
                 .build();
-        emailService.sendEmailAlert(debitAlert);
+//        emailService.sendEmailAlert(debitAlert);
+
+        //save  debit Transfer Transaction
+        TransactionRequest transactionRequest = TransactionRequest.builder()
+                .transactionType(TransactionType.DEBIT)
+                .accountNumber(sourceAccountUser.getAccountNumber())
+                .amount(request.getAmount())
+                .build();
+        transactionService.saveTransaction(transactionRequest);
 
         User destinationAccountUser = userRepository.findByAccountNumber(request.getDestinationAccountNumber());
         destinationAccountUser.setAccountBalance(destinationAccountUser.getAccountBalance().add(request.getAmount()));
@@ -215,7 +244,15 @@ public class UserServiceImpl implements UserService {
                 .subject("CREDIT TRANSFER ALERT")
                 .messageBody("Hie "+recipientUsername+" A Sum of "+request.getAmount()+" has been sent to your account ending 2******"+destinationAccountUser.getAccountNumber().substring(7, 10)+" ! Your current balance is "+destinationAccountUser.getAccountBalance())
                 .build();
-        emailService.sendEmailAlert(creditAlert);
+//        emailService.sendEmailAlert(creditAlert);
+
+        //save  credit Transfer Transaction
+        TransactionRequest transaction = TransactionRequest.builder()
+                .transactionType(TransactionType.CREDIT)
+                .accountNumber(destinationAccountUser.getAccountNumber())
+                .amount(request.getAmount())
+                .build();
+        transactionService.saveTransaction(transaction);
 
         return BankResponse.builder()
                 .responseCode(AccountUtils.TRANSFER_SUCCESSFUL_CODE)
