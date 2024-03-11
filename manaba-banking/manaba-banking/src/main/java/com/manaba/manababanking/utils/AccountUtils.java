@@ -21,8 +21,10 @@ public class AccountUtils {
 
     public static final String ACCOUNT_DEBITED_SUCCESS_CODE = "205";
     public static final String ACCOUNT_DEBITED_SUCCESS_MESSAGE = "Account Debited Successfully";
-    public static final String TRANSFER_SUCCESSFUL_CODE = "2006";
+    public static final String TRANSFER_SUCCESSFUL_CODE = "206";
     public  static final String TRANSFER_SUCCESSFUL_MESSAGE = "Your transfer was successful";
+
+    public static final String LOGIN_SUCCESS ="207";
 
 
 
